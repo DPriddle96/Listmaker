@@ -1,11 +1,14 @@
 package com.danielpriddle.listmaker
 
 import android.os.Bundle
+import android.text.InputType
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.ui.AppBarConfiguration
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.danielpriddle.listmaker.databinding.ActivityMainBinding
@@ -13,6 +16,7 @@ import com.danielpriddle.listmaker.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
 
     lateinit var todoListRecyclerView: RecyclerView
+    val listDataManager = ListDataManager(this)
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -23,15 +27,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val lists = listDataManager.readLists()
         todoListRecyclerView = binding.contentLayout.listsRecyclerView
         todoListRecyclerView.layoutManager = LinearLayoutManager(this)
-        todoListRecyclerView.adapter = TodoListAdapter()
+        todoListRecyclerView.adapter = TodoListAdapter(lists)
 
         setSupportActionBar(binding.toolbar)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
+        binding.fab.setOnClickListener {
+            showCreateTodoListDialog()
         }
     }
 
@@ -49,5 +53,29 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun showCreateTodoListDialog() {
+
+        val myDialog = AlertDialog.Builder(this)
+        val todoTitleEditText = EditText(this)
+        todoTitleEditText.inputType = InputType.TYPE_CLASS_TEXT
+
+        myDialog.setTitle(getString(R.string.dialog_title))
+        myDialog.setView(todoTitleEditText)
+        myDialog.setPositiveButton(getString(R.string.dialog_positive)) {
+            dialog, _ ->
+                val adapter = todoListRecyclerView.adapter as TodoListAdapter
+                val list = TaskList(todoTitleEditText.text.toString())
+                listDataManager.saveList(list)
+                adapter.addList(list)
+                dialog.dismiss()
+        }
+
+        myDialog.setNegativeButton(getString(R.string.dialog_negative)) {
+                dialog, _ ->
+            dialog.dismiss()
+        }
+        myDialog.create().show()
     }
 }
