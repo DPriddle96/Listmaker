@@ -10,14 +10,14 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.add
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.danielpriddle.listmaker.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity(), TodoListAdapter.TodoListClickListener {
+class MainActivity : AppCompatActivity(), TodoListFragment.OnFragmentInteractionListener {
 
-    lateinit var todoListRecyclerView: RecyclerView
-    private val listDataManager = ListDataManager(this)
+    private var todoListFragment = TodoListFragment.newInstance()
 
     companion object {
         const val INTENT_LIST_KEY = "list"
@@ -32,12 +32,6 @@ class MainActivity : AppCompatActivity(), TodoListAdapter.TodoListClickListener 
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val lists = listDataManager.readLists()
-        todoListRecyclerView = binding.contentLayout.listsRecyclerView
-        todoListRecyclerView.layoutManager = LinearLayoutManager(this)
-        todoListRecyclerView.adapter = TodoListAdapter(lists, this)
-
         setSupportActionBar(binding.toolbar)
 
         binding.fab.setOnClickListener {
@@ -50,16 +44,12 @@ class MainActivity : AppCompatActivity(), TodoListAdapter.TodoListClickListener 
         if(requestCode == LIST_DETAIL_REQUEST_CODE) {
             data.let {
                 val list = data?.getParcelableExtra<TaskList>(INTENT_LIST_KEY)!!
-                listDataManager.saveList(list)
-                updateLists()
+                todoListFragment.saveList(list)
             }
         }
     }
 
-    private fun updateLists() {
-        val lists = listDataManager.readLists()
-        todoListRecyclerView.adapter = TodoListAdapter(lists, this)
-    }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -87,10 +77,8 @@ class MainActivity : AppCompatActivity(), TodoListAdapter.TodoListClickListener 
             .setView(todoTitleEditText)
             .setPositiveButton(R.string.dialog_positive) {
             dialog, _ ->
-                val adapter = todoListRecyclerView.adapter as TodoListAdapter
                 val list = TaskList(todoTitleEditText.text.toString())
-                listDataManager.saveList(list)
-                adapter.addList(list)
+                todoListFragment.addList(list)
                 dialog.dismiss()
                 showTaskListItems(list)
         }
@@ -107,7 +95,8 @@ class MainActivity : AppCompatActivity(), TodoListAdapter.TodoListClickListener 
         startActivityForResult(taskListItem, LIST_DETAIL_REQUEST_CODE)
     }
 
-    override fun listItemClicked(list: TaskList) {
+    override fun onTodoListClicked(list: TaskList) {
         showTaskListItems(list)
     }
+
 }
